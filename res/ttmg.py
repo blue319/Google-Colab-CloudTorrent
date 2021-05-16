@@ -455,16 +455,25 @@ class LocalhostRun:
         return oldAddr
       except:
         pass
-    for _ in range(2):
-      self.connection=Popen(f"autossh -R 80:localhost:{self.port} {self.id}@ssh.localhost.run -o StrictHostKeyChecking=no -o ServerAliveInterval={self.interval} -o ServerAliveCountMax={self.retries}".split(),
-        stdout=PIPE, stdin=PIPE, stderr=PIPE)
-      #print("ssh -R 80:localhost:{self.port} {self.id}@ssh.localhost.run -o StrictHostKeyChecking=no -o ServerAliveInterval={self.interval} -o ServerAliveCountMax={self.retries}")
-      try:
-        newAddr = re.findall("(.*?.localhost.run)", self.connection.stdout.readline().decode("utf-8"))[0]
-        localhostOpenDB[str(self.port)] = newAddr 
-        accessSettingFile("localhostDB.json" , localhostOpenDB, v=False)
-        return newAddr
-      except:
+    if not os.path.exists(filePath):
+      os.makedirs(filePath[:-17], exist_ok=True)
+      open(filePath, 'w').close()
+    
+    #Installing argotunnel
+    installArgoTunnel()
+
+    self.connection=None
+    self.proto=proto
+    self.port=port
+    self.metricPort=metrics
+    self.interval=interval
+    self.retries=retries
+
+  # def start(self):
+  #   if self.connection:self.connection.kill()
+  #   # self.connection=Popen(f"ssh -R 80:localhost:{self.port} {self.id}@ssh.localhost.run -o StrictHostKeyChecking=no".split(), stdout=PIPE, stdin=PIPE)
+  #   self.connection=Popen(f"/content/tools/argotunnel/cloudflared tunnel --url {self.proto}://0.0.0.0:{self.port} --logfile cloudflared.log".split(), stdout=PIPE, stdin=PIPE)
+  #   try:
         outs, errs = self.connection.communicate(timeout=15)
         self.connection.kill()
         # print(outs)
